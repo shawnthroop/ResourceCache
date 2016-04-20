@@ -11,6 +11,6 @@ import Foundation
 protocol DiskCacheable {
     associatedtype UncacheableValueType
     
-    static func st_valueFromData(data: NSData) throws -> UncacheableValueType
-    static func st_toDataFromValue(value: UncacheableValueType) throws -> NSData
+    static func valueFromData(data: NSData) throws -> UncacheableValueType
+    static func toDataFromValue(value: UncacheableValueType) throws -> NSData
 }

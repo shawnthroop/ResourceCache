@@ -18,15 +18,10 @@ class DiskCache<T: DiskCacheable where T.UncacheableValueType: Equatable> {
     
     init(name: String, rootPath: String) {
         self.memoryCache = MemoryCache(name: name)
-        
-        // Inserts a default directory so that if you supply "" for a name, you don't end up wiping the Caches folder when calling removeAllObjects() 
-        // cachePath = "/{{ rootDir }}/DiskCache/{{ name }}/"
         self.cachePath = FileSystem.encodedPathForKey(DiskCacheDirectory, rootPath: rootPath)
+        self.queue = dispatch_queue_create(DiskCachePrefix + ".asyncQueue", DISPATCH_QUEUE_CONCURRENT)
         
-        // "In OS X v10.7 and later or iOS 4.3 and later, specify DISPATCH_QUEUE_SERIAL (or NULL) to create a serial queue or specify DISPATCH_QUEUE_CONCURRENT to create a concurrent queue."
-        self.queue = dispatch_queue_create(DiskCachePrefix + ".asyncQueue", DISPATCH_QUEUE_SERIAL)
-        
-        dispatch_async(self.queue) { [weak self] in
+        dispatch_barrier_async(self.queue) { [weak self] in
             guard let strongSelf = self else {
                 return
             }
@@ -62,7 +57,7 @@ extension DiskCache {
                 }
                 
             } else {
-                let objOnDisk = FileSystem.objectAtPath(path) { try T.st_valueFromData($0) }
+                let objOnDisk = FileSystem.objectAtPath(path) { try T.valueFromData($0) }
                 
                 if let obj = objOnDisk {
                     strongSelf.memoryCache.setObject(obj, forKey: key)
@@ -77,7 +72,7 @@ extension DiskCache {
     }
     
     func setObject(obj: T.UncacheableValueType, forKey key: String, _ completion: ((Bool) -> Void)? = nil) {
-        dispatch_async(queue) { [weak self] in
+        dispatch_barrier_async(queue) { [weak self] in
             guard let strongSelf = self else {
                 return
             }
@@ -87,7 +82,7 @@ extension DiskCache {
             
             // write object to disk (as NSData)
             let path = FileSystem.encodedPathForKey(key, rootPath: strongSelf.cachePath)
-            let success = FileSystem.createObject(obj, atPath: path) { try T.st_toDataFromValue($0) }
+            let success = FileSystem.createObject(obj, atPath: path) { try T.toDataFromValue($0) }
             
             // signal completion if necessary
             if let block = completion {
@@ -100,7 +95,7 @@ extension DiskCache {
     
     
     func removeObjectForKey(key: String, _ completion: ((Bool) -> Void)? = nil) {
-        dispatch_async(queue) { [weak self] in
+        dispatch_barrier_async(queue) { [weak self] in
             guard let strongSelf = self else {
                 return
             }
@@ -122,7 +117,7 @@ extension DiskCache {
     }
     
     func removeAllObjects(completion: ((Bool) -> Void)? = nil) {
-        dispatch_async(queue) { [weak self] in
+        dispatch_barrier_async(queue) { [weak self] in
             guard let strongSelf = self else {
                 return
             }
@@ -150,7 +145,7 @@ extension DiskCache {
     func trimToDate(date: NSDate, _ completion: (() -> Void)? = nil) {
         let pointInTime = date.copy() as! NSDate
         
-        dispatch_async(queue) { [weak self] in
+        dispatch_barrier_async(queue) { [weak self] in
             guard let strongSelf = self else {
                 return
             }

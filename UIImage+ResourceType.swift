@@ -25,11 +25,11 @@ extension UIImage: RemoteFetchable {
 // MARK: DiskCacheable
 
 extension UIImage {
-    static func st_valueFromData(data: NSData) throws -> UIImage {
+    static func valueFromData(data: NSData) throws -> UIImage {
         return UIImage(data: data)!
     }
     
-    static func st_toDataFromValue(value: UIImage) throws -> NSData {
+    static func toDataFromValue(value: UIImage) throws -> NSData {
         return UIImagePNGRepresentation(value)!
     }
 }

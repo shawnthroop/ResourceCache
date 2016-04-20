@@ -34,13 +34,8 @@ extension ResourceCache {
                 return
             }
             
-            self.fetcher.fetchObjectAtURL(remoteURL, failure: failure, success: { [weak self] fetchedObj in
-                guard let strongSelf = self else {
-                    return
-                }
-                
-                strongSelf.cache.setObject(fetchedObj, forKey: key)
-                
+            self.fetcher.fetchObjectAtURL(remoteURL, failure: failure, success: { fetchedObj in
+                self.cache.setObject(fetchedObj, forKey: key)
                 completion(fetchedObj)
             })
         }
@@ -53,6 +48,10 @@ extension ResourceCache {
 // MARK: Cache
 
 extension ResourceCache {    
+    func purge() {
+        self.cache.removeAllObjects()
+    }
+    
     func trimToDate(date: NSDate) {
         self.cache.trimToDate(date)
     }
